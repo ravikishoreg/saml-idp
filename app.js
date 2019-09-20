@@ -571,12 +571,17 @@ function _runServer(argv) {
           forceAuthn: data.forceAuthn === 'true'
         };
         console.log('Received AuthnRequest => \n', req.authnRequest);
-      } else if(req.idp.options.allowRequestAcsUrl && req.idp.options.acsUrl && req.idp.options.acsUrl.contains("$"))
+      } else if(req.idp.options.allowRequestAcsUrl && req.idp.options.acsUrl && req.idp.options.acsUrl.includes("$"))
       {
         const evaluatedAcsUrl = eval(`${"\`"+req.idp.options.acsUrl+"\`"}`);
+        var evaluatedAudience;
+        if(req.idp.options.audience.includes("$")) {
+              evaluatedAudience = eval(`${"\`"+req.idp.options.audience+"\`"}`);
+        }
         req.authnRequest = {
           relayState: req.query.RelayState,
-          acsUrl: evaluatedAcsUrl
+          acsUrl: evaluatedAcsUrl,
+          audience: evaluatedAudience
         };
         console.log('Evaluated AuthnRequest => \n', req.authnRequest);
       }
@@ -673,6 +678,9 @@ function _runServer(argv) {
         }
         if (req.authnRequest.relayState) {
           authOptions.RelayState = req.authnRequest.relayState;
+        }
+        if (req.authnRequest.audience) {
+          authOptions.audience = req.authnRequest.audience;
         }
       } else {
         req.user[key] = req.body[key];
