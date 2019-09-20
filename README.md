@@ -1,3 +1,38 @@
+Modifications:
+1. Ability to have request based acs url
+> Useful mainly for idp based requests. A single idp server can serve multiple sp servers following similar acs url. For example if acsUrl while starting is ${(new URL(req.headers.Referer)).origin}/saml/SSO
+>It will redirect to the referer site at saml/SSO endpoint. If referer is missing, it will fail.
+> Not handling SLO
+2. Creating a new user for every new request (to avoid leaking email from the idp)
+
+
+Commands for installing on ubuntu:
+``` shell
+sudo su
+curl -sL https://deb.nodesource.com/setup_10.x | sudo bash -
+sudo apt install nodejs
+node --version
+mkdir /home/ubuntu/idp
+cd $_
+openssl req -x509 -new -newkey rsa:2048 -nodes -subj '/C=US/ST=California/L=San Francisco/O=JankyCo/CN=Identity Provider' -keyout idp-private-key.pem -out idp-public-cert.pem -days 7300
+
+#to generate ssl cert
+openssl req -new > new.ssl.csr
+openssl rsa -in privkey.pem -out new.cert.key
+openssl x509 -in new.ssl.csr -out new.cert.cert -req -signkey new.cert.key -days 1000
+
+cd /home/ubuntu
+git clone https://github.com/ravikishoreg/saml-idp.git
+cd saml-idp
+screen
+node app.js --host 0.0.0.0 -p 443 --iss urn::prime:idp --acs '${(new URL(req.headers.referer)).origin}/saml/SSO' --aud '${(new URL(req.headers.referer)).origin}' --cert "/home/ubuntu/idp/idp-public-cert.pem" --key "/home/ubuntu/idp/idp-private-key.pem" --https --httpsPrivateKey "/home/ubuntu/idp/new.cert.key" --httpsCert "/home/ubuntu/idp/new.cert.cert" --configFile ./simple-config.js
+```
+
+```
+Ctrl+A Ctrl+D (detach from screen)
+screen -r (Resume last session)
+```
+
 # Introduction
 
 This app provides a simple SAML Identity Provider (IdP) to test SAML 2.0 Service Providers (SPs) with the [SAML 2.0 Web Browser SSO Profile](http://en.wikipedia.org/wiki/SAML_2.0#Web_Browser_SSO_Profile) or the Single Logout Profile.
