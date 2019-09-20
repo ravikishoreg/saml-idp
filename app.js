@@ -580,6 +580,7 @@ function _runServer(argv) {
                     evaluatedAudience = eval(`${"\`"+req.idp.options.audience+"\`"}`);
               }
               req.authnRequest = {
+                id: "dummyEvaluated",     #Without this, user view is not even rendering other params
                 relayState: req.query.RelayState,
                 acsUrl: evaluatedAcsUrl,
                 audience: evaluatedAudience
@@ -673,7 +674,8 @@ function _runServer(argv) {
         req.authnRequest = JSON.parse(buffer.toString('utf8'));
 
         // Apply AuthnRequest Params
-        authOptions.inResponseTo = req.authnRequest.id;
+        if(req.authnRequest.id != "dummyEvaluated")
+            authOptions.inResponseTo = req.authnRequest.id;
         if (req.idp.options.allowRequestAcsUrl && req.authnRequest.acsUrl) {
           authOptions.acsUrl = req.authnRequest.acsUrl;
           authOptions.recipient = req.authnRequest.acsUrl;
