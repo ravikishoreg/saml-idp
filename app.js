@@ -573,17 +573,21 @@ function _runServer(argv) {
         console.log('Received AuthnRequest => \n', req.authnRequest);
       } else if(req.idp.options.allowRequestAcsUrl && req.idp.options.acsUrl && req.idp.options.acsUrl.includes("$"))
       {
-        const evaluatedAcsUrl = eval(`${"\`"+req.idp.options.acsUrl+"\`"}`);
-        var evaluatedAudience;
-        if(req.idp.options.audience.includes("$")) {
-              evaluatedAudience = eval(`${"\`"+req.idp.options.audience+"\`"}`);
+        try {
+              const evaluatedAcsUrl = eval(`${"\`"+req.idp.options.acsUrl+"\`"}`);
+              var evaluatedAudience;
+              if(req.idp.options.audience.includes("$")) {
+                    evaluatedAudience = eval(`${"\`"+req.idp.options.audience+"\`"}`);
+              }
+              req.authnRequest = {
+                relayState: req.query.RelayState,
+                acsUrl: evaluatedAcsUrl,
+                audience: evaluatedAudience
+              };
+              console.log('Evaluated AuthnRequest => \n', req.authnRequest);
+        } catch(err) {
+              console.log('Evaluating ACS failed => \n', err);
         }
-        req.authnRequest = {
-          relayState: req.query.RelayState,
-          acsUrl: evaluatedAcsUrl,
-          audience: evaluatedAudience
-        };
-        console.log('Evaluated AuthnRequest => \n', req.authnRequest);
       }
       return showUser(req, res, next);
     })
