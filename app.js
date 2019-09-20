@@ -571,6 +571,14 @@ function _runServer(argv) {
           forceAuthn: data.forceAuthn === 'true'
         };
         console.log('Received AuthnRequest => \n', req.authnRequest);
+      } else if(req.idp.options.allowRequestAcsUrl && req.idp.options.acsUrl && req.idp.options.acsUrl.contains("$"))
+      {
+        const evaluatedAcsUrl = eval(`${"\`"+req.idp.options.acsUrl+"\`"}`);
+        req.authnRequest = {
+          relayState: req.query.RelayState,
+          acsUrl: evaluatedAcsUrl
+        };
+        console.log('Evaluated AuthnRequest => \n', req.authnRequest);
       }
       return showUser(req, res, next);
     })
