@@ -652,7 +652,7 @@ function _runServer(argv) {
   });
 
   app.use(function(req, res, next){
-    req.user = argv.config.user;
+    req.user = extend({}, argv.config.user);    //dont reuse the user
     req.metadata = argv.config.metadata;
     req.idp = { options: idpOptions };
     req.participant = getParticipant(req);
