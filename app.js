@@ -580,7 +580,7 @@ function _runServer(argv) {
                     evaluatedAudience = eval(`${"\`"+req.idp.options.audience+"\`"}`);
               }
               req.authnRequest = {
-                id: "dummyEvaluated",     #Without this, user view is not even rendering other params
+                id: "dummyEvaluated",     //Without this, user view is not even rendering other params
                 relayState: req.query.RelayState,
                 acsUrl: evaluatedAcsUrl,
                 audience: evaluatedAudience
