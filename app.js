@@ -571,6 +571,24 @@ function _runServer(argv) {
           forceAuthn: data.forceAuthn === 'true'
         };
         console.log('Received AuthnRequest => \n', req.authnRequest);
+      } else if(req.idp.options.allowRequestAcsUrl && req.idp.options.acsUrl && req.idp.options.acsUrl.includes("$"))
+      {
+        try {
+              const evaluatedAcsUrl = eval(`${"\`"+req.idp.options.acsUrl+"\`"}`);
+              var evaluatedAudience;
+              if(req.idp.options.audience.includes("$")) {
+                    evaluatedAudience = eval(`${"\`"+req.idp.options.audience+"\`"}`);
+              }
+              req.authnRequest = {
+                id: "dummyEvaluated",     //Without this, user view is not even rendering other params
+                relayState: req.query.RelayState,
+                acsUrl: evaluatedAcsUrl,
+                audience: evaluatedAudience
+              };
+              console.log('Evaluated AuthnRequest => \n', req.authnRequest);
+        } catch(err) {
+              console.log('Evaluating ACS failed => \n', err);
+        }
       }
       return showUser(req, res, next);
     })
@@ -634,7 +652,7 @@ function _runServer(argv) {
   });
 
   app.use(function(req, res, next){
-    req.user = argv.config.user;
+    req.user = extend({}, argv.config.user);    //dont reuse the user
     req.metadata = argv.config.metadata;
     req.idp = { options: idpOptions };
     req.participant = getParticipant(req);
@@ -656,7 +674,8 @@ function _runServer(argv) {
         req.authnRequest = JSON.parse(buffer.toString('utf8'));
 
         // Apply AuthnRequest Params
-        authOptions.inResponseTo = req.authnRequest.id;
+        if(req.authnRequest.id != "dummyEvaluated")
+            authOptions.inResponseTo = req.authnRequest.id;
         if (req.idp.options.allowRequestAcsUrl && req.authnRequest.acsUrl) {
           authOptions.acsUrl = req.authnRequest.acsUrl;
           authOptions.recipient = req.authnRequest.acsUrl;
@@ -665,6 +684,9 @@ function _runServer(argv) {
         }
         if (req.authnRequest.relayState) {
           authOptions.RelayState = req.authnRequest.relayState;
+        }
+        if (req.authnRequest.audience) {
+          authOptions.audience = req.authnRequest.audience;
         }
       } else {
         req.user[key] = req.body[key];
